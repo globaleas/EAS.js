@@ -93,12 +93,41 @@ function parseFipsAndTime(parts) {
     }
 
     if (!timeOffset) {
-        throw new Error(messages.timeinvalid);
+        throw new Error(messages.expiretimeinvalid);
     }
 
-    const senderParts = parts.slice(senderIndex);
-    const fullSender = senderParts.join('-');
-    const sender = fullSender.split('-').slice(1).join('-');
+    const timeString = parts[senderIndex]; // e.g., "3371800"
+    if (timeString.length !== 7) {
+        throw new Error('Invalid time format in header');
+    }
+
+    const currentYear = new Date().getFullYear();
+    const julianDay = parseInt(timeString.substring(0, 3), 10);
+    const hour = parseInt(timeString.substring(3, 5), 10);
+    const minute = parseInt(timeString.substring(5, 7), 10);
+
+    const isLeapYear = (year) => {
+        return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+    };
+
+    function julianToDate(julianDay, year) {
+        const date = new Date(year - 1, 11, 31);
+
+        const maxDays = isLeapYear(year) ? 366 : 365;
+        if (julianDay < 1 || julianDay > maxDays) {
+            throw new Error(messages.datetimeinvalid);
+        }
+
+        date.setDate(date.getDate() + julianDay);
+        return date;
+    }
+
+    const startTime = julianToDate(julianDay, currentYear);
+    startTime.setUTCHours(hour, minute, 0, 0);
+
+    const expireHours = parseInt(timeOffset.substring(0, 2), 10);
+    const expireMinutes = parseInt(timeOffset.substring(2), 10);
+    const endTime = new Date(startTime.getTime() + (expireHours * 60 + expireMinutes) * 60 * 1000);
 
     let locations = [];
     for (let code of fipsCodes) {
@@ -117,19 +146,9 @@ function parseFipsAndTime(parts) {
         locations.push(`${subdivText}${EASData.SAME[loccode]}`);
     }
 
-    if (!/^\d{4}$/.test(timeOffset)) {
-        throw new Error(messages.timeinvalid);
-    }
-
-    const hours = parseInt(timeOffset.substring(0, 2), 10);
-    const minutes = parseInt(timeOffset.substring(2), 10);
-
-    if (isNaN(hours) || isNaN(minutes)) {
-        throw new Error(messages.timeinvalid);
-    }
-
-    const startTime = new Date();
-    const endTime = new Date(startTime.getTime() + (hours * 60 + minutes) * 60 * 1000);
+    const senderParts = parts.slice(senderIndex);
+    const fullSender = senderParts.join('-');
+    const sender = fullSender.split('-').slice(1).join('-');
 
     return { locations, startTime, endTime, sender };
 }
@@ -145,12 +164,20 @@ function parseFipsAndTime(parts) {
  * @returns {object} The formatted response.
  */
 function formatResponse(org, event, locations, startTime, endTime, sender) {
-    const formatTime = (date) =>
-        date.toLocaleTimeString('en-US', {
+    const formatTime = (date) => {
+        const months = ['January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December'];
+        const month = months[date.getMonth()];
+        const day = date.getDate();
+        
+        const time = date.toLocaleTimeString('en-US', {
             hour: 'numeric',
             minute: 'numeric',
-            hour12: true,
+            hour12: true
         });
+
+        return `${time} on ${month} ${day}`;
+    };
 
     return {
         organization: org,
@@ -158,14 +185,10 @@ function formatResponse(org, event, locations, startTime, endTime, sender) {
         locations: locations.join('; '),
         timing: {
             start: formatTime(startTime),
-            end: formatTime(endTime),
+            end: formatTime(endTime)
         },
         sender: sender,
-        formatted: `${org}a ${event} for ${locations.join(
-            '; '
-        )}; beginning at ${formatTime(startTime)} and ending at ${formatTime(
-            endTime
-        )}. Message from ${sender}`,
+        formatted: `${org}a ${event} for ${locations.join('; ')}; beginning at ${formatTime(startTime)} and ending at ${formatTime(endTime)}. Message from ${sender}`
     };
 }
 
