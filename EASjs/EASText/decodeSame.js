@@ -98,7 +98,7 @@ function parseFipsAndTime(parts) {
 
     const timeString = parts[senderIndex]; // e.g., "3371800"
     if (timeString.length !== 7) {
-        throw new Error('Invalid time format in header');
+        throw new Error(messages.datetimeinvalid);
     }
 
     const currentYear = new Date().getFullYear();
@@ -125,6 +125,9 @@ function parseFipsAndTime(parts) {
     const startTime = julianToDate(julianDay, currentYear);
     startTime.setUTCHours(hour, minute, 0, 0);
 
+    if (timeOffset.length !== 4) {
+        throw new Error(messages.expiretimeinvalid);
+    }
     const expireHours = parseInt(timeOffset.substring(0, 2), 10);
     const expireMinutes = parseInt(timeOffset.substring(2), 10);
     const endTime = new Date(startTime.getTime() + (expireHours * 60 + expireMinutes) * 60 * 1000);
