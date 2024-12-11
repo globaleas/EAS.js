@@ -1,8 +1,12 @@
 {
-  "name": "easjs",
+  "name": "@globaleas/easjs",
   "version": "0.0.1",
   "description": "An open source EAS library created by the community, for the community",
-  "main": "decodeSame.js",
+  "main": "./EASjs/EASText/decodeSame.js",
+  "type": "module",
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
