@@ -1,9 +1,9 @@
 # ![easJSlogo](https://assets.gwes-cdn.net/easjs%20square.png)
 An open source EAS library created by the community, for the community
 
-[![SAME](https://img.shields.io/badge/SAME-Specific%20Area%20Message%20Encoding-red)](https://en.wikipedia.org/wiki/Specific_Area_Message_Encoding) [![EAS](https://img.shields.io/badge/EAS-Emergency%20Alert%20System-green)](https://en.wikipedia.org/wiki/Specific_Area_Message_Encoding)
+[![SAME](https://img.shields.io/badge/SAME-Specific%20Area%20Message%20Encoding-red)](https://en.wikipedia.org/wiki/Specific_Area_Message_Encoding) [![EAS](https://img.shields.io/badge/EAS-Emergency%20Alert%20System-green)](https://en.wikipedia.org/wiki/Emergency_Alert_System)
 
-### This project is currently in development.
+### This project is currently in development.`
 ## Installation
 
 You can install the entire EASjs library by running:
