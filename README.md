@@ -58,4 +58,4 @@ Output:
 ```
 ## Support
 
-For support or queries, open a issue here on GitHub or email harv@globaleas.org
+For support or queries, open a issue here on GitHub or email developers@globaleas.org
