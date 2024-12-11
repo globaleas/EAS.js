@@ -1,0 +1,10 @@
+{
+    "zczcnotfound": "The header provided is missing a ZCZC start string.",
+    "orgcodeinvalid": "The organization code provided is invalid or is missing. Example: EAS or CIV",
+    "eventcodeinvalid": "The event code provided is invalid or is missing. Example: CAE or CEM",
+    "fipsinvalid": "The FIPS code provided is invalid or is missing. Example: 015000",
+    "timeinvalid": "The time provided is invalid or is missing. Example: 0015",
+    "senderinvalid": "The sender provided is invalid or is missing. Example: COMCAST",
+    "nodata": "No header was provided.",
+    "invalidsameheader": "The header provided is invalid or is missing."
+}
