@@ -1,4 +1,4 @@
-# ![easJSlogo](https://assets.gwes-cdn.net/easjs%20square.png)
+# ![easJSlogo](https://assets.gwes-cdn.net/easjs%20mock%20Medium.png)
 An open source EAS library created by the community, for the community
 
 [![SAME](https://img.shields.io/badge/SAME-Specific%20Area%20Message%20Encoding-red)](https://en.wikipedia.org/wiki/Specific_Area_Message_Encoding) [![EAS](https://img.shields.io/badge/EAS-Emergency%20Alert%20System-green)](https://en.wikipedia.org/wiki/Emergency_Alert_System)
@@ -30,9 +30,9 @@ Output:
   organization: 'The Civil Authorities have issued ',
   event: 'Administrative Message',
   locations: 'Sedgwick, KS',
-  timing: { start: '5:32 PM', end: '6:32 PM' },
+  timing: { start: '10:07 AM on December 9', end: '11:07 AM on December 9' },
   sender: 'ERN/LB',
-  formatted: 'The Civil Authorities have issued a Administrative Message for Sedgwick, KS; beginning at 5:32 PM and ending at 6:32 PM. Message from ERN/LB'
+  formatted: 'The Civil Authorities have issued a Administrative Message for Sedgwick, KS; beginning at 10:07 AM on December 9 and ending at 11:07 AM on December 9. Message from ERN/LB'
 }
 ```
 
