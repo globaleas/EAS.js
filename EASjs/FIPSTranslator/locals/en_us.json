@@ -1,0 +1,6 @@
+{
+  "fipsinvalid": "The FIPS code provided is invalid or is missing. Example: 015000",
+  "subdivisioninvalid": "The subdivision code provided at the beginning of a FIPS code is invalid or is missing. Example: 015000",
+  "nodata": "No FIPS code was provided.",
+  "invalidcharacters": "The FIPS code provided contains invalid characters. Example: 015000"
+}
