@@ -87,3 +87,9 @@ Please follow the **Commit Message Guidelines** above when writing commit messag
 
 Force pushing to your own feature branch is allowed, but should be avoided if possible. Acceptable instances of force
 pushing would be to squash commits in order to maintain a clean tree, or to update the branch with changes from master.
+
+#### Tests
+
+When contributing to this repository, it is heavily encouraged that your changes are covered by tests. For example, If you
+are adding a new feature, please add tests for that feature. If you are fixing a bug, please add a test that fails
+without your code changes.
