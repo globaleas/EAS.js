@@ -1,8 +1,8 @@
 {
   "name": "@globaleas/easjs",
-  "version": "0.0.3",
+  "version": "0.1",
   "description": "An open source EAS library created by the community, for the community",
-  "main": "./EASjs/EASText/decodeSame.js",
+  "main": "index.js",
   "type": "commonjs",
   "publishConfig": {
     "access": "public"
