@@ -1,11 +1,11 @@
 /**
- * Module dependencies
+ * Modules to be exported from the EASjs library.
  */
 const translateFips = require('./EASjs/FIPSTranslator/translateFips.js');
 const decodeSame = require('./EASjs/EASText/decodeSame.js');
 
 /**
- * Exports the translateFips and decodeSame functions
+ * Exports all functions from the EASjs library.
  * @module index
  */
 module.exports = {
