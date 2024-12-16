@@ -1,0 +1,5 @@
+{
+  "nodata": "No originator was provided.",
+  "invalidcharacters": "The originator code provided contains invalid characters.",
+  "originvalid": "The originator code provided is invalid or is missing."
+}

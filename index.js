@@ -4,6 +4,7 @@
 const translateFips = require('./EASjs/FIPSTranslator/translateFips.js');
 const decodeSame = require('./EASjs/EASText/decodeSame.js');
 const eventTranslator = require('./EASjs/EventTranslator/eventTranslator.js');
+const origTranslator = require('./EASjs/OrigTranslator/origTranslator.js');
 
 /**
  * Exports all functions from the EASjs library.
@@ -12,5 +13,6 @@ const eventTranslator = require('./EASjs/EventTranslator/eventTranslator.js');
 module.exports = {
     translateFips,
     decodeSame,
-    eventTranslator
+    eventTranslator,
+    origTranslator
 }
