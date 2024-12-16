@@ -1,0 +1,5 @@
+{
+  "nodata": "No event code was provided.",
+  "invalidcharacters": "The event code provided contains invalid characters.",
+  "eventinvalid": "The event code provided is invalid or is missing."
+}
