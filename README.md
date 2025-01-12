@@ -78,7 +78,7 @@ console.log(result)
 ```
 Output:
 ```
-The United States Government has issued
+United States Government
 ```
 ## Support
 
