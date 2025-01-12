@@ -23,7 +23,7 @@ function origTranslator(data){
     }
 
     const originCode = data.toUpperCase();
-    const originResponse = fipsData.ORGS[originCode];
+    const originResponse = fipsData.ORGS2[originCode];
     if (!originResponse) {
         throw new Error(messages.originvalid);
     }
