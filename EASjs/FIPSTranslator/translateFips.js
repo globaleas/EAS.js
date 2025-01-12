@@ -32,8 +32,9 @@ function translateFips(data) {
     }
 
     const subdivision = subdivisionCode === '0' ? (fipsData.SUBDIV[subdivisionCode] || "All") : fipsData.SUBDIV[subdivisionCode];
-    const county = dataResponse.split(',')[0];
-    const region = dataResponse.split(',')[1].trim();
+    const isStatewide = fipsCode.endsWith('000');
+    let county = dataResponse.split(',')[0];
+    let region = isStatewide ? "none" : dataResponse.split(',')[1].trim();
 
     if (!subdivision) {
         throw new Error(messages.subdivisioninvalid)
@@ -42,11 +43,17 @@ function translateFips(data) {
         throw new Error(messages.fipsinvalid);
     }
 
+    let formatted = `${subdivision} ${county}, ${region}`;
+    if (isStatewide) {
+        region = county;
+        formatted = `${subdivision} of ${county}`;
+    }
+
     return {
         subdivision: subdivision,
         county: county,
         region: region,
-        formatted: `${subdivision} ${county}, ${region}`,
+        formatted: formatted,
     }
 }
 
