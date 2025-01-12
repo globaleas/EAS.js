@@ -1,5 +1,5 @@
 const origTranslator = require('./origTranslator.js');
-const messages = require('./locals/en_us.json');
+const messages = require('./locals/en_US.json');
 const fipsData = require('../../EASData.json');
 
 describe('origTranslator', () => {
