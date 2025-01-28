@@ -23,5 +23,10 @@
   ],
   "devDependencies": {
     "jest": "^29.7.0"
+  },
+  "dependencies": {
+    "ffmpeg-static": "^5.2.0",
+    "lamejs": "^1.2.1",
+    "wavefile": "^11.0.0"
   }
 }
