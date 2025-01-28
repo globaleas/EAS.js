@@ -4,10 +4,13 @@
  */
 
 const fs = require('fs');
+const path = require('path');
 const WaveFile = require('wavefile').WaveFile;
 const ffmpeg = require('ffmpeg-static');
-const {execSync} = require('child_process');
+const { execFile } = require('child_process');
+const { promisify } = require('util');
 const messages = require('./locals/en_us.json');
+const execFileAsync = promisify(execFile);
 
 const SAMPLE_RATE = 24000;
 const BIT_DEPTH = 16;
@@ -234,7 +237,7 @@ function createEOM(mode = MODES.DEFAULT) {
  * @param {string} [options.outputFile='output.wav'] - The output file name.
  * @returns {Float32Array} - The generated EAS alert buffer.
  */
-function generateEASAlert(zczcMessage, options = {}) {
+async function generateEASAlert(zczcMessage, options = {}) {
     const {
         mode = 'DEFAULT',
         attentionTone = true,
@@ -245,17 +248,20 @@ function generateEASAlert(zczcMessage, options = {}) {
     let audioBuffer = new Float32Array(0);
     if (audioPath) {
         if (!fs.existsSync(audioPath)) throw new Error(messages.audioFileNotFound);
-        const tempWav = 'temp_conversion.wav';
+        const tempWav = path.resolve('temp_conversion.wav');
         try {
-            console.log(`Converting ${audioPath} to WAV format...`);
-            execSync(
-                `${ffmpeg} -hide_banner -y -i "${audioPath}" ` +
-                `-ar ${SAMPLE_RATE} -ac 1 -acodec pcm_s16le ${tempWav}`
-            );
+            await execFileAsync(ffmpeg, [
+                '-hide_banner',
+                '-y',
+                '-i', path.resolve(audioPath),
+                '-ar', String(SAMPLE_RATE),
+                '-ac', '1',
+                '-acodec', 'pcm_s16le',
+                tempWav
+            ]);
             const wav = new WaveFile(fs.readFileSync(tempWav));
             wav.toBitDepth('32f');
             audioBuffer = new Float32Array(wav.getSamples(true, Float32Array));
-            console.log(`Audio buffer length: ${audioBuffer.length}`);
         } catch (error) {
             console.error('Error during audio conversion:', error);
         } finally {
@@ -291,7 +297,7 @@ function generateEASAlert(zczcMessage, options = {}) {
     }
 
     if (outputFile.endsWith('.mp3')) {
-        const tempWav = 'temp_export.wav';
+        const tempWav = path.resolve('temp_export.wav');
         try {
             console.log('Creating temporary WAV file for MP3 conversion...');
             const wav = new WaveFile();
@@ -299,10 +305,14 @@ function generateEASAlert(zczcMessage, options = {}) {
             fs.writeFileSync(tempWav, wav.toBuffer());
 
             console.log('Converting WAV to MP3...');
-            execSync(
-                `${ffmpeg} -hide_banner -y -i ${tempWav} ` +
-                `-codec:a libmp3lame -b:a ${options.bitrate || '128k'} "${outputFile}"`
-            );
+            await execFileAsync(ffmpeg, [
+                '-hide_banner',
+                '-y',
+                '-i', tempWav,
+                '-codec:a', 'libmp3lame',
+                '-b:a', options.bitrate || '128k',
+                path.resolve(outputFile)
+            ]);
         } catch (error) {
             console.error('Error during MP3 conversion:', error);
         } finally {
@@ -313,7 +323,7 @@ function generateEASAlert(zczcMessage, options = {}) {
     } else {
         const wav = new WaveFile();
         wav.fromScratch(1, SAMPLE_RATE, BIT_DEPTH, int16Buffer);
-        fs.writeFileSync(outputFile, wav.toBuffer());
+        fs.writeFileSync(path.resolve(outputFile), wav.toBuffer());
     }
 
     return output;
