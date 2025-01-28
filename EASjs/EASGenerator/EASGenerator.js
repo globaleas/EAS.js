@@ -310,7 +310,7 @@ async function generateEASAlert(zczcMessage, options = {}) {
                 '-y',
                 '-i', tempWav,
                 '-codec:a', 'libmp3lame',
-                '-b:a', options.bitrate || '128k',
+                '-b:a', '128k',
                 path.resolve(outputFile)
             ]);
         } catch (error) {
