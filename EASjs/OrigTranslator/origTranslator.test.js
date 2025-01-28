@@ -1,11 +1,11 @@
-const origTranslator = require('../../EASjs/OrigTranslator/origTranslator');
-const messages = require('../../EASjs/OrigTranslator/locals/en_us.json');
+const origTranslator = require('./origTranslator.js');
+const messages = require('./locals/en_us.json');
 const fipsData = require('../../EASData.json');
 
 describe('origTranslator', () => {
     it('returns the correct originator name for a valid code', () => {
         const result = origTranslator('WXR');
-        expect(result).toBe(fipsData.ORGS['WXR']);
+        expect(result).toBe(fipsData.ORGS2['WXR']);
     });
 
     it('throws an error if no data is provided', () => {
