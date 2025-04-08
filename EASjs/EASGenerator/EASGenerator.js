@@ -18,9 +18,9 @@ const BIT_DEPTH = 16;
 const MODES = {
     DEFAULT: 'DEFAULT', // Default mode
     NWS: 'NWS', // National Weather Service (NWS) mode
-    DIGITAL: 'DIGITAL', // Digital mode (SAGE, Trilithic)
-    SAGE: 'SAGE', // SAGE Digital mode
-    TRILITHIC: 'TRILITHIC' // Trilithic Digital mode
+    DIGITAL: 'DIGITAL', // Digital mode (SAGE 3644)
+    SAGE: 'SAGE', // SAGE 1822 mode
+    TRILITHIC: 'TRILITHIC' // Trilithic mode
 };
 
 /**
