@@ -16,19 +16,43 @@ const SAMPLE_RATE = 24000;
 const BIT_DEPTH = 16;
 
 const MODES = {
-    DEFAULT: 'DEFAULT', // Default mode
-    NWS: 'NWS', // National Weather Service (NWS) mode
-    DIGITAL: 'DIGITAL', // Digital mode (SAGE 3644)
-    SAGE: 'SAGE', // SAGE 1822 mode
-    TRILITHIC: 'TRILITHIC' // Trilithic mode
+    /**
+     * Default mode.
+     * Standard headers, standard attention tones.
+     */
+    DEFAULT: 'DEFAULT',
+
+    /**
+     * National Weather Service mode.
+     * Standard headers, uses 1050hz attention tone.
+     */
+    NWS: 'NWS',
+
+    /**
+     * Digital mode.
+     * Emulate a SAGE DIGITAL 3644 EAS encoder.
+     */
+    DIGITAL: 'DIGITAL',
+
+    /**
+     * Sage mode.
+     * Emulate a standard SAGE EAS 1822 EAS encoder.
+     */
+    SAGE: 'SAGE',
+
+    /**
+     * Trilithic mode.
+     * Emulate a Trilithic EAS encoder.
+     */
+    TRILITHIC: 'TRILITHIC'
 };
 
 /**
- * Generates a sine wave buffer for the given frequency and duration
- * @param {number} freq - Frequency of the sine wave in Hz
- * @param {number} durationMs - Duration of the wave in milliseconds
- * @param {number} volumeDB - Volume in decibels (default is 0)
- * @returns {Float32Array} - The sine wave audio buffer
+ * Generates a sine wave buffer for a given frequency, duration, and volume.
+ * @param {number} freq - The frequency of the sine wave in Hz.
+ * @param {number} durationMs - The duration of the sine wave in milliseconds.
+ * @param {number} [volumeDB=0] - The volume of the sine wave in decibels.
+ * @returns {Float32Array} The generated sine wave buffer.
  */
 function generateSine(freq, durationMs, volumeDB = 0) {
     const samples = Math.round((durationMs / 1000) * SAMPLE_RATE);
@@ -41,32 +65,32 @@ function generateSine(freq, durationMs, volumeDB = 0) {
 }
 
 /**
- * Creates a mark tone for EAS signaling
- * @returns {Float32Array} - The mark tone buffer
+ * Creates the "Mark" tone (2083.3 Hz).
+ * @returns {Float32Array} The generated mark tone buffer.
  */
 const createMark = () => generateSine(2083.3, 1000 / 520.83, -3);
 
 /**
- * Creates a space tone for EAS signaling
- * @returns {Float32Array} - The space tone buffer
+ * Creates the "Space" tone (1562.5 Hz).
+ * @returns {Float32Array} The generated space tone buffer.
  */
 const createSpace = () => generateSine(1562.5, 1000 / 520.83, -3);
 
 /**
- * Creates an attention tone based on the selected mode
- * @param {string} mode - The mode of the attention tone (default is 'DEFAULT')
- * @returns {Float32Array} - The attention tone buffer
+ * Creates the attention tone for the given mode.
+ * @param {string} [mode=MODES.DEFAULT] - The mode for which the attention tone is generated.
+ * @returns {Float32Array} The generated attention tone buffer.
  */
 function createAttentionTone(mode = MODES.DEFAULT) {
     switch (mode) {
         case MODES.NWS:
-            return generateSine(1050, 9000, -4); // NWS-specific attention tone
+            return generateSine(1050, 9000, -4);
         default: {
             const tone1 = generateSine(853, 8000, -10);
             const tone2 = generateSine(960, 8000, -10);
             const mixed = new Float32Array(tone1.length);
             for (let i = 0; i < mixed.length; i++) {
-                mixed[i] = 0.5 * (tone1[i] + tone2[i]); // Mix two tones together
+                mixed[i] = 0.5 * (tone1[i] + tone2[i]);
             }
             return mixed;
         }
@@ -74,18 +98,18 @@ function createAttentionTone(mode = MODES.DEFAULT) {
 }
 
 /**
- * Repeats the provided audio buffer a given number of times
- * @param {Float32Array} buffer - The audio buffer to repeat
- * @param {number} times - The number of times to repeat the buffer
- * @returns {Float32Array} - The concatenated audio buffer
+ * Repeats the given audio buffer a specified number of times.
+ * @param {Float32Array} buffer - The buffer to repeat.
+ * @param {number} times - The number of times to repeat the buffer.
+ * @returns {Float32Array} The repeated audio buffer.
  */
 const repeatAudio = (buffer, times) => concatAudio(...Array(times).fill(buffer));
 
 /**
- * Encodes the EAS header with the provided data and mode
- * @param {string} data - The data to encode
- * @param {string} mode - The mode of encoding (default is 'DEFAULT')
- * @returns {Float32Array} - The encoded header buffer
+ * Encodes the header of the message for the given mode.
+ * @param {string} data - The message data to encode.
+ * @param {string} [mode=MODES.DEFAULT] - The mode for which the message is encoded.
+ * @returns {Float32Array} The encoded message header.
  */
 function encodeHeader(data, mode = MODES.DEFAULT) {
     let buffer = new Float32Array(0);
@@ -132,9 +156,9 @@ function encodeHeader(data, mode = MODES.DEFAULT) {
 }
 
 /**
- * Creates an EOM (End of Message) signal based on the selected mode
- * @param {string} mode - The mode of the EOM signal (default is 'DEFAULT')
- * @returns {Float32Array} - The EOM signal buffer
+ * Creates the End of Message (EOM) signal for the given mode.
+ * @param {string} [mode=MODES.DEFAULT] - The mode for which the EOM is created.
+ * @returns {Float32Array} The generated EOM buffer.
  */
 function createEOM(mode = MODES.DEFAULT) {
     if (mode === MODES.DIGITAL) {
@@ -164,10 +188,14 @@ function createEOM(mode = MODES.DEFAULT) {
 }
 
 /**
- * Generates the EAS alert audio with a ZCZC message and optional settings
- * @param {string} zczcMessage - The ZCZC message to encode
- * @param {object} options - Options for the EAS alert generation
- * @returns {Promise<Float32Array>} - The generated EAS alert audio buffer
+ * Generates an EAS alert with a specified message.
+ * @param {string} zczcMessage - The ZCZC message for the alert.
+ * @param {Object} [options={}] - Options for the alert generation.
+ * @param {string} [options.mode=MODES.DEFAULT] - The mode for the alert.
+ * @param {boolean} [options.attentionTone=true] - Whether to include the attention tone.
+ * @param {string} [options.audioPath=null] - Path to an audio file to include in the alert.
+ * @param {string} [options.outputFile='output.wav'] - The output file name for the alert.
+ * @returns {Promise<Float32Array>} The generated EAS alert audio buffer.
  */
 async function generateEASAlert(zczcMessage, options = {}) {
     const {
@@ -258,16 +286,16 @@ async function generateEASAlert(zczcMessage, options = {}) {
 }
 
 /**
- * Creates a silence buffer for a given duration
- * @param {number} durationMs - Duration of silence in milliseconds
- * @returns {Float32Array} - The silence audio buffer
+ * Creates a silence buffer of the specified duration.
+ * @param {number} durationMs - The duration of the silence in milliseconds.
+ * @returns {Float32Array} The silence buffer.
  */
 const createSilence = (durationMs) => new Float32Array(Math.round((durationMs / 1000) * SAMPLE_RATE));
 
 /**
- * Concatenates multiple audio buffers into one
- * @param {...Float32Array} buffers - The audio buffers to concatenate
- * @returns {Float32Array} - The concatenated audio buffer
+ * Concatenates multiple audio buffers into one.
+ * @param {...Float32Array} buffers - The buffers to concatenate.
+ * @returns {Float32Array} The concatenated audio buffer.
  */
 function concatAudio(...buffers) {
     const totalLength = buffers.reduce((acc, b) => acc + b.length, 0);
