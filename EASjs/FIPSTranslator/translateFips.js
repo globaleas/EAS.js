@@ -19,7 +19,7 @@ const translateFips = (data) => {
     }
 
     if (!/^\d{6}$/.test(data)) {
-        throw new Error(messages.fipsinvalid);
+        throw new Error(data.length !== 6 ? messages.fipsinvalid : messages.invalidcharacters);
     }
 
     const subdivisionCode = data[0];
@@ -30,8 +30,8 @@ const translateFips = (data) => {
         throw new Error(messages.fipsinvalid);
     }
 
-    const subdivision = subdivisionCode === '0'
-        ? fipsData.SUBDIV?.[subdivisionCode] ?? 'All'
+    const subdivision = subdivisionCode === '0' && (!fipsData.SUBDIV?.[subdivisionCode] || fipsData.SUBDIV[subdivisionCode] === '')
+        ? 'All'
         : fipsData.SUBDIV?.[subdivisionCode];
 
     if (!subdivision) {

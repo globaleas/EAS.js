@@ -17,8 +17,8 @@ const origTranslator = (data) => {
         throw new Error(messages.nodata);
     }
 
-    if (!/^[a-zA-Z]{3}$/.test(data)) {
-        throw new Error(messages.originvalid);
+    if (data.length !== 3 || !/^[a-zA-Z]{3}$/.test(data)) {
+        throw new Error(data.length !== 3 ? messages.originvalid : messages.invalidcharacters);
     }
 
     const originCode = data.toUpperCase();
