@@ -4007,6 +4007,7 @@
         "IFW": "Industrial Fire Warning", 
         "ADR": "Administrative Message", 
         "BLU": "Blue Alert", 
+        "MEP": "Missing and Endangered Persons",
         "EVA": "Evacuation Watch", 
         "FLS": "Flood Statement", 
         "TXB": "Transmitter Backup On", 
