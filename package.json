@@ -1,6 +1,6 @@
 {
   "name": "@globaleas/easjs",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "An open source EAS library created by the community, for the community",
   "main": "index.js",
   "type": "commonjs",
