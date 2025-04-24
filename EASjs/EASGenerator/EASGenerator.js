@@ -98,14 +98,6 @@ function createAttentionTone(mode = MODES.DEFAULT) {
 }
 
 /**
- * Repeats the given audio buffer a specified number of times.
- * @param {Float32Array} buffer - The buffer to repeat.
- * @param {number} times - The number of times to repeat the buffer.
- * @returns {Float32Array} The repeated audio buffer.
- */
-const repeatAudio = (buffer, times) => concatAudio(...Array(times).fill(buffer));
-
-/**
  * Encodes the header of the message for the given mode.
  * @param {string} data - The message data to encode.
  * @param {string} [mode=MODES.DEFAULT] - The mode for which the message is encoded.
@@ -151,7 +143,15 @@ function encodeHeader(data, mode = MODES.DEFAULT) {
             standardBuffer
         );
     } else {
-        return repeatAudio(concatAudio(buffer, createSilence(1000)), 3);
+        // Only use 868ms if mode is TRILITHIC, otherwise 1000ms
+        const silenceDuration = mode === MODES.TRILITHIC ? 868 : 1000;
+        return concatAudio(
+            buffer,
+            createSilence(silenceDuration),
+            buffer,
+            createSilence(silenceDuration),
+            buffer
+        )
     }
 }
 
@@ -234,7 +234,7 @@ async function generateEASAlert(zczcMessage, options = {}) {
     let output = concatAudio(
         createSilence(1000),
         encodeHeader('\xAB'.repeat(16) + zczcMessage, mode),
-        createSilence(mode === MODES.TRILITHIC ? 150 : 500)
+        createSilence(MODES.TRILITHIC ? 1118: 1000)
     );
 
     if (attentionTone) {
