@@ -151,7 +151,7 @@ function encodeHeader(data, mode = MODES.DEFAULT) {
             buffer,
             createSilence(silenceDuration),
             buffer
-        )
+        );
     }
 }
 
@@ -205,7 +205,7 @@ async function generateEASAlert(zczcMessage, options = {}) {
         outputFile = 'output.wav'
     } = options;
 
-    const mode = (rawMode ?? MODES.DEFAULT).toUpperCase();
+    const mode = String(rawMode ?? MODES.DEFAULT).toUpperCase();
 
     let audioBuffer = new Float32Array(0);
     if (audioPath?.trim()) {
@@ -223,7 +223,7 @@ async function generateEASAlert(zczcMessage, options = {}) {
             ]);
             const wav = new WaveFile(fs.readFileSync(tempWav));
             wav.toBitDepth('32f');
-            audioBuffer = new Float32Array(wav.getSamples(true, Float32Array));
+            audioBuffer = Float32Array.from(wav.getSamples(true));
         } catch (error) {
             console.error('Error during audio conversion:', error);
         } finally {
@@ -234,7 +234,7 @@ async function generateEASAlert(zczcMessage, options = {}) {
     let output = concatAudio(
         createSilence(1000),
         encodeHeader('\xAB'.repeat(16) + zczcMessage, mode),
-        createSilence(MODES.TRILITHIC ? 1118: 1000)
+        createSilence(mode === MODES.TRILITHIC ? 1118 : 1000)
     );
 
     if (attentionTone) {
@@ -247,6 +247,11 @@ async function generateEASAlert(zczcMessage, options = {}) {
 
     const eom = createEOM(mode);
     output = concatAudio(output, eom, createSilence(1000));
+
+    const peak = Math.max(...output.map(Math.abs));
+    if (peak > 1) {
+        output = output.map(x => x / peak);
+    }
 
     const int16Buffer = new Int16Array(output.length);
     for (let i = 0; i < output.length; i++) {
@@ -267,6 +272,7 @@ async function generateEASAlert(zczcMessage, options = {}) {
             await execFileAsync(ffmpeg, [
                 '-hide_banner', '-y',
                 '-i', tempWav,
+                '-ac', '1',
                 '-codec:a', 'libmp3lame',
                 '-b:a', '128k',
                 path.resolve(outputFile)
@@ -277,9 +283,13 @@ async function generateEASAlert(zczcMessage, options = {}) {
             if (fs.existsSync(tempWav)) fs.unlinkSync(tempWav);
         }
     } else {
-        const wav = new WaveFile();
-        wav.fromScratch(1, SAMPLE_RATE, BIT_DEPTH, int16Buffer);
-        fs.writeFileSync(path.resolve(outputFile), wav.toBuffer());
+        try {
+            const wav = new WaveFile();
+            wav.fromScratch(1, SAMPLE_RATE, BIT_DEPTH, int16Buffer);
+            fs.writeFileSync(path.resolve(outputFile), wav.toBuffer());
+        } catch (err) {
+            console.error('Error writing WAV file:', err);
+        }
     }
 
     return output;
