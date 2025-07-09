@@ -28,7 +28,7 @@ const { generateEASAlert, MODES } = require('@globaleas/easjs'); // Import the M
 const header = 'ZCZC-CIV-ADR-020173+0100-3441707-ERN/LB-';
 generateEASAlert(header, {
     audioPath: 'alert-audio.mp3',
-    filename: 'final-alert.wav',
+    outputFile: 'final-alert.wav',
     format: 'wav',
     mode: MODES.DIGITAL
 })
