@@ -1,6 +1,6 @@
 {
   "name": "@globaleas/easjs",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "An open source EAS library created by the community, for the community",
   "main": "index.js",
   "type": "commonjs",
@@ -22,7 +22,7 @@
     "open source"
   ],
   "devDependencies": {
-    "jest": "^29.7.0"
+    "jest": "^30.0.5"
   },
   "dependencies": {
     "ffmpeg-static": "^5.2.0",

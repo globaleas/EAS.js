@@ -234,7 +234,7 @@ async function generateEASAlert(zczcMessage, options = {}) {
     let output = concatAudio(
         createSilence(1000),
         encodeHeader('\xAB'.repeat(16) + zczcMessage, mode),
-        createSilence(MODES.TRILITHIC ? 1118: 1000)
+        createSilence(mode === MODES.TRILITHIC ? 1118: 1000)
     );
 
     if (attentionTone) {
