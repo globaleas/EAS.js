@@ -172,7 +172,7 @@ const formatResponse = (org, event, locations, startTime, endTime, sender) => {
             end: formatTime(endTime)
         },
         sender,
-        formatted: `${org}a ${event} for ${locations.join('; ')}; beginning at ${formatTime(startTime)} and ending at ${formatTime(endTime)}. Message from ${sender}`
+        formatted: `${org}a${new RegExp('^[aeiouAEIOU]').test(event) ? 'n' : ''} ${event} for ${locations.join('; ')}; beginning at ${formatTime(startTime)} and ending at ${formatTime(endTime)}. Message from ${sender}`
     };
 };
 
