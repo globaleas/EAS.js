@@ -1,0 +1,38 @@
+name: Mirror to Bitbucket
+
+on:
+  push:
+    branches: [ "main" ]
+    tags: [ "**" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git (bot identity)
+        run: |
+          git config --global user.name  "GWES-Bot"
+          git config --global user.email "developers@globaleas.org"
+
+      - name: Add Bitbucket remote with credentials
+        env:
+          BB_USER: ${{ secrets.BITBUCKET_USERNAME }}
+          BB_PASS: ${{ secrets.BITBUCKET_APP_PASSWORD }}
+          BB_URL: ${{ secrets.BITBUCKET_REPO_URL }}
+        run: |
+          AUTH_URL="$(echo "$BB_URL" | sed -E "s#https://#https://${BB_USER}:${BB_PASS}@#")"
+          git remote add bitbucket "$AUTH_URL"
+
+      - name: Mirror all refs (branches & tags) and prune deletions
+        run: |
+          git remote set-url --push origin DISABLED
+          git push --mirror bitbucket
