@@ -9,24 +9,28 @@ const messages = require('./locals/en_us.json');
 /**
  * Decodes a SAME (Specific Area Message Encoding) header.
  * @param {string} data - The SAME header to decode.
+ * @param {Object} [options={}] - Options for decoding the header.
+ * @param {Date|string|number} [options.referenceDate] - Date used to resolve the header year.
+ * @param {number} [options.year] - Explicit year for the header.
+ * @param {string} [options.timeZone] - Timezone used to format the header time.
  * @returns {object} Decoded SAME header information.
  * @throws {Error} If the SAME header format is invalid.
  */
-const decodeSame = (data) => {
+const decodeSame = (data, options = {}) => {
     if (typeof data !== 'string' || data.trim() === '') {
         throw new Error(messages.nodata);
     }
 
-    const cleanData = data.endsWith('-') ? data.slice(0, -1) : data;
-    const parts = cleanData.split('-');
+    const cleanData = data.endsWith('-') ? data : `${data}-`;
+    const parts = cleanData.slice(0, -1).split('-');
 
     validateHeader(parts);
 
     const orgInfo = parseOrgCode(parts[1]);
     const eventInfo = parseEventCode(parts[2]);
-    const { locations, startTime, endTime, sender } = parseFipsAndTime(parts);
+    const { locations, startTime, endTime, sender } = parseFipsAndTime(parts, options);
 
-    return formatResponse(orgInfo, eventInfo, locations, startTime, endTime, sender);
+    return formatResponse(orgInfo, eventInfo, locations, startTime, endTime, sender, options);
 };
 
 /**
@@ -51,7 +55,7 @@ const validateHeader = (parts) => {
  */
 const parseOrgCode = (orgCode) => {
     const org = EASData.ORGS?.[orgCode];
-    if (!org) throw new Error(messages.orgcodeinvalid);
+    if (!/^[A-Z]{3}$/.test(orgCode) || !org) throw new Error(messages.orgcodeinvalid);
     return org;
 };
 
@@ -63,24 +67,28 @@ const parseOrgCode = (orgCode) => {
  */
 const parseEventCode = (eventCode) => {
     const event = EASData.EVENTS?.[eventCode];
-    if (!event) throw new Error(messages.eventcodeinvalid);
+    if (!/^[A-Z]{3}$/.test(eventCode) || !event) throw new Error(messages.eventcodeinvalid);
     return event;
 };
 
 /**
  * Parses the FIPS codes and time from the SAME header.
  * @param {string[]} parts - The parts of the SAME header.
+ * @param {Object} options - Options for decoding the header.
  * @returns {object} The parsed locations, start time, end time, and sender.
  * @throws {Error} If the FIPS codes or time are invalid.
  */
-const parseFipsAndTime = (parts) => {
+const parseFipsAndTime = (parts, options) => {
     const fipsCodes = [];
     let timeOffset = null;
     let senderIndex = 0;
 
     for (let i = 3; i < parts.length; i++) {
         if (parts[i].includes('+')) {
-            const [fipsCode, time] = parts[i].split('+');
+            const timeParts = parts[i].split('+');
+            if (timeParts.length !== 2) throw new Error(messages.expiretimeinvalid);
+
+            const [fipsCode, time] = timeParts;
             fipsCodes.push(fipsCode);
             timeOffset = time;
             senderIndex = i + 1;
@@ -90,34 +98,54 @@ const parseFipsAndTime = (parts) => {
     }
 
     if (!timeOffset) throw new Error(messages.expiretimeinvalid);
+    if (fipsCodes.length === 0 || fipsCodes.length > 31 ||
+        fipsCodes.some((code) => !/^\d{6}$/.test(code))) {
+        throw new Error(messages.fipsinvalid);
+    }
+
+    if (!/^\d{4}$/.test(timeOffset)) throw new Error(messages.expiretimeinvalid);
+    const expireHours = parseInt(timeOffset.slice(0, 2), 10);
+    const expireMinutes = parseInt(timeOffset.slice(2), 10);
+    const validDuration =
+        expireHours === 0 && [15, 30, 45].includes(expireMinutes) ||
+        expireHours >= 1 && [0, 30].includes(expireMinutes);
+
+    if (!validDuration) throw new Error(messages.expiretimeinvalid);
 
     const timeString = parts[senderIndex] ?? '';
-    if (timeString.length !== 7) throw new Error(messages.datetimeinvalid);
+    if (!/^\d{7}$/.test(timeString)) throw new Error(messages.datetimeinvalid);
 
-    const currentYear = new Date().getFullYear();
     const julianDay = parseInt(timeString.slice(0, 3), 10);
     const hour = parseInt(timeString.slice(3, 5), 10);
     const minute = parseInt(timeString.slice(5, 7), 10);
 
+    if (hour > 23 || minute > 59) throw new Error(messages.datetimeinvalid);
+
     const isLeapYear = (year) =>
         year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
 
-    const julianToDate = (julianDay, year) => {
-        const maxDays = isLeapYear(year) ? 366 : 365;
-        if (julianDay < 1 || julianDay > maxDays) {
-            throw new Error(messages.datetimeinvalid);
-        }
-        const date = new Date(year - 1, 11, 31);
-        date.setDate(date.getDate() + julianDay);
-        return date;
-    };
+    const referenceDate = new Date(options.referenceDate ?? Date.now());
+    if (Number.isNaN(referenceDate.getTime())) throw new Error(messages.datetimeinvalid);
 
-    const startTime = julianToDate(julianDay, currentYear);
-    startTime.setUTCHours(hour, minute, 0, 0);
+    if (options.year !== undefined &&
+        (!Number.isInteger(options.year) || options.year < 1000 || options.year > 9999)) {
+        throw new Error(messages.datetimeinvalid);
+    }
 
-    if (timeOffset.length !== 4) throw new Error(messages.expiretimeinvalid);
-    const expireHours = parseInt(timeOffset.slice(0, 2), 10);
-    const expireMinutes = parseInt(timeOffset.slice(2), 10);
+    const referenceYear = referenceDate.getUTCFullYear();
+    const years = options.year !== undefined
+        ? [options.year]
+        : [referenceYear - 1, referenceYear, referenceYear + 1];
+    const startTimes = years
+        .filter((year) => julianDay >= 1 && julianDay <= (isLeapYear(year) ? 366 : 365))
+        .map((year) => new Date(Date.UTC(year, 0, julianDay, hour, minute)));
+
+    if (startTimes.length === 0) throw new Error(messages.datetimeinvalid);
+
+    const startTime = startTimes.sort((a, b) =>
+        Math.abs(a.getTime() - referenceDate.getTime()) - Math.abs(b.getTime() - referenceDate.getTime())
+    )[0];
+
     const endTime = new Date(startTime.getTime() + (expireHours * 60 + expireMinutes) * 60 * 1000);
 
     const locations = fipsCodes.map((code) => {
@@ -138,8 +166,9 @@ const parseFipsAndTime = (parts) => {
         return `${subdiv === "0" ? "" : subdivName}${sameLoc}`;
     });
 
-    const senderParts = parts.slice(senderIndex);
-    const sender = senderParts.join('-').split('-').slice(1).join('-');
+    const sender = parts[senderIndex + 1] ?? '';
+    if (!/^(?=.{1,8}$)(?=.*[A-Z0-9])[A-Z0-9/]+ *$/.test(sender)) throw new Error(messages.senderinvalid);
+    if (parts.length !== senderIndex + 2) throw new Error(messages.invalidsameheader);
 
     return { locations, startTime, endTime, sender };
 };
@@ -152,15 +181,20 @@ const parseFipsAndTime = (parts) => {
  * @param {Date} startTime - The start time.
  * @param {Date} endTime - The end time.
  * @param {string} sender - The sender information.
+ * @param {Object} options - Options for formatting the header.
  * @returns {object} The formatted response.
  */
-const formatResponse = (org, event, locations, startTime, endTime, sender) => {
+const formatResponse = (org, event, locations, startTime, endTime, sender, options) => {
     const formatTime = (date) => {
-        const options = { hour: 'numeric', minute: 'numeric', hour12: true };
-        const time = date.toLocaleTimeString('en-US', options);
-        const month = date.toLocaleString('default', { month: 'long' });
-        const day = date.getDate();
-        return `${time} on ${month} ${day}`;
+        const timeOptions = { hour: 'numeric', minute: 'numeric', hour12: true };
+        const dateOptions = { month: 'long', day: 'numeric' };
+        if (options.timeZone) {
+            timeOptions.timeZone = options.timeZone;
+            dateOptions.timeZone = options.timeZone;
+        }
+        const time = date.toLocaleTimeString('en-US', timeOptions);
+        const formattedDate = date.toLocaleString('en-US', dateOptions);
+        return `${time} on ${formattedDate}`;
     };
 
     return {

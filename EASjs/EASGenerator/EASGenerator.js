@@ -4,11 +4,13 @@
  */
 
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const { WaveFile } = require('wavefile');
 const ffmpeg = require('ffmpeg-static');
 const { execFile } = require('child_process');
 const { promisify } = require('util');
+const decodeSame = require('../EASText/decodeSame');
 const messages = require('./locals/en_us.json');
 const execFileAsync = promisify(execFile);
 
@@ -195,7 +197,9 @@ function createEOM(mode = MODES.DEFAULT) {
  * @param {boolean} [options.attentionTone=true] - Whether to include the attention tone.
  * @param {string} [options.audioPath=null] - Path to an audio file to include in the alert.
  * @param {string} [options.outputFile='output.wav'] - The output file name for the alert.
+ * @param {string} [options.format] - Deprecated. Ignored; use the outputFile extension instead.
  * @returns {Promise<Float32Array>} The generated EAS alert audio buffer.
+ * @throws {Error} If alert generation fails.
  */
 async function generateEASAlert(zczcMessage, options = {}) {
     const {
@@ -205,13 +209,25 @@ async function generateEASAlert(zczcMessage, options = {}) {
         outputFile = 'output.wav'
     } = options;
 
+    decodeSame(zczcMessage);
+    const message = zczcMessage.endsWith('-') ? zczcMessage : `${zczcMessage}-`;
+    const messageParts = message.split('-');
+    messageParts[messageParts.length - 2] = messageParts[messageParts.length - 2].padEnd(8, ' ');
+    const normalizedMessage = messageParts.join('-');
+
+    if (rawMode !== undefined && rawMode !== null && typeof rawMode !== 'string') {
+        throw new Error(messages.invalidMode);
+    }
+
     const mode = (rawMode ?? MODES.DEFAULT).toUpperCase();
+    if (!Object.values(MODES).includes(mode)) throw new Error(messages.invalidMode);
 
     let audioBuffer = new Float32Array(0);
     if (audioPath?.trim()) {
-        if (!fs.existsSync(audioPath)) throw new Error(messages?.audioFileNotFound ?? 'Audio file not found.');
+        if (!fs.existsSync(audioPath)) throw new Error(messages.audioFileNotFound.replace('{path}', audioPath));
 
-        const tempWav = path.resolve('temp_conversion.wav');
+        const tempDirectory = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'easjs-'));
+        const tempWav = path.join(tempDirectory, 'conversion.wav');
         try {
             await execFileAsync(ffmpeg, [
                 '-hide_banner', '-y',
@@ -225,15 +241,15 @@ async function generateEASAlert(zczcMessage, options = {}) {
             wav.toBitDepth('32f');
             audioBuffer = new Float32Array(wav.getSamples(true, Float32Array));
         } catch (error) {
-            console.error('Error during audio conversion:', error);
+            throw new Error(`${messages.audioConversionFailed} ${error?.message ?? error}`);
         } finally {
-            if (fs.existsSync(tempWav)) fs.unlinkSync(tempWav);
+            await fs.promises.rm(tempDirectory, { recursive: true, force: true }).catch(() => {});
         }
     }
 
     let output = concatAudio(
         createSilence(1000),
-        encodeHeader('\xAB'.repeat(16) + zczcMessage, mode),
+        encodeHeader('\xAB'.repeat(16) + normalizedMessage, mode),
         createSilence(mode === MODES.TRILITHIC ? 1118: 1000)
     );
 
@@ -256,14 +272,13 @@ async function generateEASAlert(zczcMessage, options = {}) {
     const outputIsMp3 = outputFile?.toLowerCase().endsWith('.mp3');
 
     if (outputIsMp3) {
-        const tempWav = path.resolve('temp_export.wav');
+        const tempDirectory = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'easjs-'));
+        const tempWav = path.join(tempDirectory, 'export.wav');
         try {
-            console.log('Creating temporary WAV file for MP3 conversion...');
             const wav = new WaveFile();
             wav.fromScratch(1, SAMPLE_RATE, BIT_DEPTH, int16Buffer);
             fs.writeFileSync(tempWav, wav.toBuffer());
 
-            console.log('Converting WAV to MP3...');
             await execFileAsync(ffmpeg, [
                 '-hide_banner', '-y',
                 '-i', tempWav,
@@ -272,9 +287,9 @@ async function generateEASAlert(zczcMessage, options = {}) {
                 path.resolve(outputFile)
             ]);
         } catch (error) {
-            console.error('Error during MP3 conversion:', error?.message ?? error);
+            throw new Error(`${messages.outputConversionFailed} ${error?.message ?? error}`);
         } finally {
-            if (fs.existsSync(tempWav)) fs.unlinkSync(tempWav);
+            await fs.promises.rm(tempDirectory, { recursive: true, force: true }).catch(() => {});
         }
     } else {
         const wav = new WaveFile();
