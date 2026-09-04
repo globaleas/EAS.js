@@ -9,10 +9,13 @@ const messages = require('./locals/en_us.json');
 /**
  * Decodes a SAME (Specific Area Message Encoding) header.
  * @param {string} data - The SAME header to decode.
+ * @param {Object} [options={}] - Options for decoding the header.
+ * @param {Date|string|number} [options.referenceDate] - Date used to resolve the header year.
+ * @param {number} [options.year] - Explicit year for the header.
  * @returns {object} Decoded SAME header information.
  * @throws {Error} If the SAME header format is invalid.
  */
-const decodeSame = (data) => {
+const decodeSame = (data, options = {}) => {
     if (typeof data !== 'string' || data.trim() === '') {
         throw new Error(messages.nodata);
     }
@@ -24,7 +27,7 @@ const decodeSame = (data) => {
 
     const orgInfo = parseOrgCode(parts[1]);
     const eventInfo = parseEventCode(parts[2]);
-    const { locations, startTime, endTime, sender } = parseFipsAndTime(parts);
+    const { locations, startTime, endTime, sender } = parseFipsAndTime(parts, options);
 
     return formatResponse(orgInfo, eventInfo, locations, startTime, endTime, sender);
 };
@@ -70,10 +73,11 @@ const parseEventCode = (eventCode) => {
 /**
  * Parses the FIPS codes and time from the SAME header.
  * @param {string[]} parts - The parts of the SAME header.
+ * @param {Object} options - Options for decoding the header.
  * @returns {object} The parsed locations, start time, end time, and sender.
  * @throws {Error} If the FIPS codes or time are invalid.
  */
-const parseFipsAndTime = (parts) => {
+const parseFipsAndTime = (parts, options) => {
     const fipsCodes = [];
     let timeOffset = null;
     let senderIndex = 0;
@@ -92,28 +96,38 @@ const parseFipsAndTime = (parts) => {
     if (!timeOffset) throw new Error(messages.expiretimeinvalid);
 
     const timeString = parts[senderIndex] ?? '';
-    if (timeString.length !== 7) throw new Error(messages.datetimeinvalid);
+    if (!/^\d{7}$/.test(timeString)) throw new Error(messages.datetimeinvalid);
 
-    const currentYear = new Date().getFullYear();
     const julianDay = parseInt(timeString.slice(0, 3), 10);
     const hour = parseInt(timeString.slice(3, 5), 10);
     const minute = parseInt(timeString.slice(5, 7), 10);
 
+    if (hour > 23 || minute > 59) throw new Error(messages.datetimeinvalid);
+
     const isLeapYear = (year) =>
         year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
 
-    const julianToDate = (julianDay, year) => {
-        const maxDays = isLeapYear(year) ? 366 : 365;
-        if (julianDay < 1 || julianDay > maxDays) {
-            throw new Error(messages.datetimeinvalid);
-        }
-        const date = new Date(year - 1, 11, 31);
-        date.setDate(date.getDate() + julianDay);
-        return date;
-    };
+    const referenceDate = new Date(options.referenceDate ?? Date.now());
+    if (Number.isNaN(referenceDate.getTime())) throw new Error(messages.datetimeinvalid);
 
-    const startTime = julianToDate(julianDay, currentYear);
-    startTime.setUTCHours(hour, minute, 0, 0);
+    if (options.year !== undefined &&
+        (!Number.isInteger(options.year) || options.year < 1000 || options.year > 9999)) {
+        throw new Error(messages.datetimeinvalid);
+    }
+
+    const referenceYear = referenceDate.getUTCFullYear();
+    const years = options.year !== undefined
+        ? [options.year]
+        : [referenceYear - 1, referenceYear, referenceYear + 1];
+    const startTimes = years
+        .filter((year) => julianDay >= 1 && julianDay <= (isLeapYear(year) ? 366 : 365))
+        .map((year) => new Date(Date.UTC(year, 0, julianDay, hour, minute)));
+
+    if (startTimes.length === 0) throw new Error(messages.datetimeinvalid);
+
+    const startTime = startTimes.sort((a, b) =>
+        Math.abs(a.getTime() - referenceDate.getTime()) - Math.abs(b.getTime() - referenceDate.getTime())
+    )[0];
 
     if (timeOffset.length !== 4) throw new Error(messages.expiretimeinvalid);
     const expireHours = parseInt(timeOffset.slice(0, 2), 10);
@@ -156,10 +170,10 @@ const parseFipsAndTime = (parts) => {
  */
 const formatResponse = (org, event, locations, startTime, endTime, sender) => {
     const formatTime = (date) => {
-        const options = { hour: 'numeric', minute: 'numeric', hour12: true };
+        const options = { hour: 'numeric', minute: 'numeric', hour12: true, timeZone: 'UTC' };
         const time = date.toLocaleTimeString('en-US', options);
-        const month = date.toLocaleString('default', { month: 'long' });
-        const day = date.getDate();
+        const month = date.toLocaleString('en-US', { month: 'long', timeZone: 'UTC' });
+        const day = date.getUTCDate();
         return `${time} on ${month} ${day}`;
     };
 
