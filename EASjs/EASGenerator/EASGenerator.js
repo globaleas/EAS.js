@@ -4,6 +4,7 @@
  */
 
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const { WaveFile } = require('wavefile');
 const ffmpeg = require('ffmpeg-static');
@@ -211,7 +212,8 @@ async function generateEASAlert(zczcMessage, options = {}) {
     if (audioPath?.trim()) {
         if (!fs.existsSync(audioPath)) throw new Error(messages?.audioFileNotFound ?? 'Audio file not found.');
 
-        const tempWav = path.resolve('temp_conversion.wav');
+        const tempDirectory = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'easjs-'));
+        const tempWav = path.join(tempDirectory, 'conversion.wav');
         try {
             await execFileAsync(ffmpeg, [
                 '-hide_banner', '-y',
@@ -227,7 +229,7 @@ async function generateEASAlert(zczcMessage, options = {}) {
         } catch (error) {
             console.error('Error during audio conversion:', error);
         } finally {
-            if (fs.existsSync(tempWav)) fs.unlinkSync(tempWav);
+            await fs.promises.rm(tempDirectory, { recursive: true, force: true });
         }
     }
 
@@ -256,7 +258,8 @@ async function generateEASAlert(zczcMessage, options = {}) {
     const outputIsMp3 = outputFile?.toLowerCase().endsWith('.mp3');
 
     if (outputIsMp3) {
-        const tempWav = path.resolve('temp_export.wav');
+        const tempDirectory = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'easjs-'));
+        const tempWav = path.join(tempDirectory, 'export.wav');
         try {
             console.log('Creating temporary WAV file for MP3 conversion...');
             const wav = new WaveFile();
@@ -274,7 +277,7 @@ async function generateEASAlert(zczcMessage, options = {}) {
         } catch (error) {
             console.error('Error during MP3 conversion:', error?.message ?? error);
         } finally {
-            if (fs.existsSync(tempWav)) fs.unlinkSync(tempWav);
+            await fs.promises.rm(tempDirectory, { recursive: true, force: true });
         }
     } else {
         const wav = new WaveFile();
