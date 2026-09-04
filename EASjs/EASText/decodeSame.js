@@ -108,8 +108,7 @@ const parseFipsAndTime = (parts, options) => {
     const expireMinutes = parseInt(timeOffset.slice(2), 10);
     const validDuration =
         expireHours === 0 && [15, 30, 45].includes(expireMinutes) ||
-        expireHours >= 1 && expireHours < 6 && [0, 30].includes(expireMinutes) ||
-        expireHours === 6 && expireMinutes === 0;
+        expireHours >= 1 && [0, 30].includes(expireMinutes);
 
     if (!validDuration) throw new Error(messages.expiretimeinvalid);
 

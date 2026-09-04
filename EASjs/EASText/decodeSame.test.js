@@ -54,6 +54,11 @@ describe('decodeSame', () => {
         expect(() => decodeSame('ZCZC-WXR-SQW-027133+9999-3441441-ERN/CRTV-')).toThrow(messages.expiretimeinvalid);
     });
 
+    test('should accept expire times through 99 hours and 30 minutes', () => {
+        expect(() => decodeSame('ZCZC-WXR-SQW-027133+0630-3441441-ERN/CRTV-')).not.toThrow();
+        expect(() => decodeSame('ZCZC-WXR-SQW-027133+9930-3441441-ERN/CRTV-')).not.toThrow();
+    });
+
     test('should throw an error if there are too many FIPS codes', () => {
         const locations = Array(32).fill('027133').join('-');
         expect(() => decodeSame(`ZCZC-WXR-SQW-${locations}+0100-3441441-ERN/CRTV-`)).toThrow(messages.fipsinvalid);
