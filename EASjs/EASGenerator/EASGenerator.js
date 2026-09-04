@@ -197,7 +197,9 @@ function createEOM(mode = MODES.DEFAULT) {
  * @param {boolean} [options.attentionTone=true] - Whether to include the attention tone.
  * @param {string} [options.audioPath=null] - Path to an audio file to include in the alert.
  * @param {string} [options.outputFile='output.wav'] - The output file name for the alert.
+ * @param {string} [options.format] - Deprecated. Ignored; use the outputFile extension instead.
  * @returns {Promise<Float32Array>} The generated EAS alert audio buffer.
+ * @throws {Error} If alert generation fails.
  */
 async function generateEASAlert(zczcMessage, options = {}) {
     const {

@@ -64,6 +64,12 @@ describe('EASGenerator', () => {
         expect(buffer.length).toBeGreaterThan(0);
     });
 
+    it('should accept the deprecated format option', async () => {
+        const buffer = await generateEASAlert(validHeader, { format: 'wav' });
+        expect(buffer).toBeDefined();
+        expect(buffer.length).toBeGreaterThan(0);
+    });
+
     it('should use a temporary directory for audio conversion', async () => {
         const wav = new WaveFile();
         wav.fromScratch(1, 24000, '16', new Int16Array([0]));
