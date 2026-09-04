@@ -1,3 +1,4 @@
+const { execFileSync } = require('node:child_process');
 const decodeSame = require('./decodeSame');
 const EASData = require('../../EASData.json');
 const messages = require('./locals/en_us.json');
@@ -103,34 +104,30 @@ describe('decodeSame', () => {
 
     test('should decode time in UTC', () => {
         const validHeader = 'ZCZC-WXR-SQW-027133+0100-0010030-ERN/CRTV-';
-        const timezone = process.env.TZ;
-        process.env.TZ = 'America/Denver';
-        try {
-            const result = decodeSame(validHeader, { year: 2026, timeZone: 'UTC' });
-            expect(result.timing).toEqual({
-                start: '12:30 AM on January 1',
-                end: '1:30 AM on January 1',
-            });
-        } finally {
-            if (timezone === undefined) delete process.env.TZ;
-            else process.env.TZ = timezone;
-        }
+        const output = execFileSync(process.execPath, ['-e', `
+            const decodeSame = require(${JSON.stringify(require.resolve('./decodeSame'))});
+            const result = decodeSame(${JSON.stringify(validHeader)}, { year: 2026, timeZone: 'UTC' });
+            process.stdout.write(JSON.stringify(result));
+        `], { env: { ...process.env, TZ: 'America/Denver' }, encoding: 'utf8' });
+        const result = JSON.parse(output);
+        expect(result.timing).toEqual({
+            start: '12:30 AM on January 1',
+            end: '1:30 AM on January 1',
+        });
     });
 
     test('should decode time in the system timezone by default', () => {
         const validHeader = 'ZCZC-WXR-SQW-027133+0100-0010030-ERN/CRTV-';
-        const timezone = process.env.TZ;
-        process.env.TZ = 'America/Denver';
-        try {
-            const result = decodeSame(validHeader, { year: 2026 });
-            expect(result.timing).toEqual({
-                start: '5:30 PM on December 31',
-                end: '6:30 PM on December 31',
-            });
-        } finally {
-            if (timezone === undefined) delete process.env.TZ;
-            else process.env.TZ = timezone;
-        }
+        const output = execFileSync(process.execPath, ['-e', `
+            const decodeSame = require(${JSON.stringify(require.resolve('./decodeSame'))});
+            const result = decodeSame(${JSON.stringify(validHeader)}, { year: 2026 });
+            process.stdout.write(JSON.stringify(result));
+        `], { env: { ...process.env, TZ: 'America/Denver' }, encoding: 'utf8' });
+        const result = JSON.parse(output);
+        expect(result.timing).toEqual({
+            start: '5:30 PM on December 31',
+            end: '6:30 PM on December 31',
+        });
     });
 
     test('should resolve the year from a reference date', () => {
