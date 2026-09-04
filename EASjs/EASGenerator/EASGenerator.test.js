@@ -4,6 +4,7 @@ const os = require('os');
 const path = require('path');
 const { execFile } = require('child_process');
 const { WaveFile } = require('wavefile');
+const messages = require('./locals/en_us.json');
 
 // Mock fs module
 jest.mock('fs', () => ({
@@ -76,9 +77,7 @@ describe('EASGenerator', () => {
     });
 
     it('should use a temporary directory for MP3 conversion', async () => {
-        const consoleLog = jest.spyOn(console, 'log').mockImplementation();
         await generateEASAlert('ZCZC-TEST', { outputFile: 'test.mp3' });
-        consoleLog.mockRestore();
 
         const tempDirectory = path.join(os.tmpdir(), 'easjs-test');
         expect(fs.writeFileSync).toHaveBeenCalledWith(path.join(tempDirectory, 'export.wav'), expect.anything());
@@ -86,15 +85,38 @@ describe('EASGenerator', () => {
     });
 
     it('should clean up after audio conversion fails', async () => {
-        const consoleError = jest.spyOn(console, 'error').mockImplementation();
         execFile.mockImplementationOnce((file, args, callback) => callback(new Error('Conversion failed')));
 
-        await generateEASAlert('ZCZC-TEST', { audioPath: 'audio.mp3' });
-        consoleError.mockRestore();
+        await expect(
+            generateEASAlert('ZCZC-TEST', { audioPath: 'audio.mp3' })
+        ).rejects.toThrow(messages.audioConversionFailed);
 
         expect(fs.promises.rm).toHaveBeenCalledWith(
             path.join(os.tmpdir(), 'easjs-test'),
             { recursive: true, force: true }
         );
+    });
+
+    it('should throw an error if MP3 conversion fails', async () => {
+        execFile.mockImplementationOnce((file, args, callback) => callback(new Error('Conversion failed')));
+
+        await expect(
+            generateEASAlert('ZCZC-TEST', { outputFile: 'test.mp3' })
+        ).rejects.toThrow(messages.outputConversionFailed);
+
+        expect(fs.promises.rm).toHaveBeenCalledWith(
+            path.join(os.tmpdir(), 'easjs-test'),
+            { recursive: true, force: true }
+        );
+    });
+
+    it('should throw an error if writing output fails', async () => {
+        fs.writeFileSync.mockImplementationOnce(() => {
+            throw new Error('Write failed');
+        });
+
+        await expect(
+            generateEASAlert('ZCZC-TEST', { outputFile: 'test.wav' })
+        ).rejects.toThrow('Write failed');
     });
 });

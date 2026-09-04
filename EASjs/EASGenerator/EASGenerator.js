@@ -227,7 +227,7 @@ async function generateEASAlert(zczcMessage, options = {}) {
             wav.toBitDepth('32f');
             audioBuffer = new Float32Array(wav.getSamples(true, Float32Array));
         } catch (error) {
-            console.error('Error during audio conversion:', error);
+            throw new Error(`${messages.audioConversionFailed} ${error?.message ?? error}`);
         } finally {
             await fs.promises.rm(tempDirectory, { recursive: true, force: true });
         }
@@ -265,6 +265,7 @@ async function generateEASAlert(zczcMessage, options = {}) {
             const wav = new WaveFile();
             wav.fromScratch(1, SAMPLE_RATE, BIT_DEPTH, int16Buffer);
             fs.writeFileSync(tempWav, wav.toBuffer());
+            console.log('WAV file created successfully.');
 
             console.log('Converting WAV to MP3...');
             await execFileAsync(ffmpeg, [
@@ -275,7 +276,7 @@ async function generateEASAlert(zczcMessage, options = {}) {
                 path.resolve(outputFile)
             ]);
         } catch (error) {
-            console.error('Error during MP3 conversion:', error?.message ?? error);
+            throw new Error(`${messages.outputConversionFailed} ${error?.message ?? error}`);
         } finally {
             await fs.promises.rm(tempDirectory, { recursive: true, force: true });
         }

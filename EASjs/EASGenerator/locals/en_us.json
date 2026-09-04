@@ -1,3 +1,5 @@
 {
-  "audioFileNotFound": "Audio file not found: {path}"
+  "audioFileNotFound": "Audio file not found: {path}",
+  "audioConversionFailed": "Audio conversion failed.",
+  "outputConversionFailed": "MP3 conversion failed."
 }
