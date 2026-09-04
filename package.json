@@ -5,7 +5,7 @@
   "main": "index.js",
   "type": "commonjs",
   "engines": {
-    "node": ">=14.14.0"
+    "node": ">=16"
   },
   "files": [
     "index.js",

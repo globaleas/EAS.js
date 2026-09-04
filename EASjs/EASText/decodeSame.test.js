@@ -71,6 +71,8 @@ describe('decodeSame', () => {
     test('should throw an error if the sender is invalid', () => {
         expect(() => decodeSame('ZCZC-WXR-SQW-027133+0100-3441441-')).toThrow(messages.senderinvalid);
         expect(() => decodeSame('ZCZC-WXR-SQW-027133+0100-3441441-TOOLONGID-')).toThrow(messages.senderinvalid);
+        expect(() => decodeSame('ZCZC-WXR-SQW-027133+0100-3441441-        -')).toThrow(messages.senderinvalid);
+        expect(() => decodeSame('ZCZC-WXR-SQW-027133+0100-3441441-/-')).toThrow(messages.senderinvalid);
     });
 
     test('should decode a sender shorter than eight characters', () => {
@@ -110,7 +112,8 @@ describe('decodeSame', () => {
                 end: '1:30 AM on January 1',
             });
         } finally {
-            process.env.TZ = timezone;
+            if (timezone === undefined) delete process.env.TZ;
+            else process.env.TZ = timezone;
         }
     });
 
@@ -125,7 +128,8 @@ describe('decodeSame', () => {
                 end: '6:30 PM on December 31',
             });
         } finally {
-            process.env.TZ = timezone;
+            if (timezone === undefined) delete process.env.TZ;
+            else process.env.TZ = timezone;
         }
     });
 

@@ -55,7 +55,7 @@ describe('EASGenerator', () => {
         fs.existsSync.mockImplementation(() => false);
         await expect(
             generateEASAlert(validHeader, { audioPath: 'invalid.mp3' })
-        ).rejects.toThrow();
+        ).rejects.toThrow('Audio file not found: invalid.mp3');
     });
 
     it('should generate alert with WAV output', async () => {
@@ -93,6 +93,7 @@ describe('EASGenerator', () => {
 
     it('should clean up after audio conversion fails', async () => {
         execFile.mockImplementationOnce((file, args, callback) => callback(new Error('Conversion failed')));
+        fs.promises.rm.mockRejectedValueOnce(new Error('Cleanup failed'));
 
         await expect(
             generateEASAlert(validHeader, { audioPath: 'audio.mp3' })
@@ -106,6 +107,7 @@ describe('EASGenerator', () => {
 
     it('should throw an error if MP3 conversion fails', async () => {
         execFile.mockImplementationOnce((file, args, callback) => callback(new Error('Conversion failed')));
+        fs.promises.rm.mockRejectedValueOnce(new Error('Cleanup failed'));
 
         await expect(
             generateEASAlert(validHeader, { outputFile: 'test.mp3' })

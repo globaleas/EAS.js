@@ -69,7 +69,7 @@ const historicalResult = decodeSame(header, {
 
 ### SAME header validation
 
-`decodeSame` and `generateEASAlert` validate originator and event codes, one to 31 six-digit location codes, `JJJHHMM` timestamps, and sender IDs containing one to eight uppercase letters, numbers, slashes, or spaces. Validity periods may be 15, 30, or 45 minutes, then half-hour increments through six hours. A missing final dash is added automatically. During generation, shorter sender IDs are padded to eight characters.
+`decodeSame` and `generateEASAlert` validate originator and event codes, one to 31 six-digit location codes, `JJJHHMM` timestamps, and sender IDs containing one to eight uppercase letters, numbers, or slashes with optional trailing spaces. Validity periods may be 15, 30, or 45 minutes, then half-hour increments through 99 hours and 30 minutes. A missing final dash is added automatically. During generation, shorter sender IDs are padded to eight characters.
 
 `generateEASAlert` returns a promise and rejects invalid headers, unsupported modes, missing or invalid audio, and output conversion failures:
 

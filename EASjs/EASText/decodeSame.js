@@ -167,7 +167,7 @@ const parseFipsAndTime = (parts, options) => {
     });
 
     const sender = parts[senderIndex + 1] ?? '';
-    if (!/^[A-Z0-9/ ]{1,8}$/.test(sender)) throw new Error(messages.senderinvalid);
+    if (!/^(?=.{1,8}$)(?=.*[A-Z0-9])[A-Z0-9/]+ *$/.test(sender)) throw new Error(messages.senderinvalid);
     if (parts.length !== senderIndex + 2) throw new Error(messages.invalidsameheader);
 
     return { locations, startTime, endTime, sender };

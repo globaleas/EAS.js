@@ -224,7 +224,7 @@ async function generateEASAlert(zczcMessage, options = {}) {
 
     let audioBuffer = new Float32Array(0);
     if (audioPath?.trim()) {
-        if (!fs.existsSync(audioPath)) throw new Error(messages?.audioFileNotFound ?? 'Audio file not found.');
+        if (!fs.existsSync(audioPath)) throw new Error(messages.audioFileNotFound.replace('{path}', audioPath));
 
         const tempDirectory = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'easjs-'));
         const tempWav = path.join(tempDirectory, 'conversion.wav');
@@ -243,7 +243,7 @@ async function generateEASAlert(zczcMessage, options = {}) {
         } catch (error) {
             throw new Error(`${messages.audioConversionFailed} ${error?.message ?? error}`);
         } finally {
-            await fs.promises.rm(tempDirectory, { recursive: true, force: true });
+            await fs.promises.rm(tempDirectory, { recursive: true, force: true }).catch(() => {});
         }
     }
 
@@ -289,7 +289,7 @@ async function generateEASAlert(zczcMessage, options = {}) {
         } catch (error) {
             throw new Error(`${messages.outputConversionFailed} ${error?.message ?? error}`);
         } finally {
-            await fs.promises.rm(tempDirectory, { recursive: true, force: true });
+            await fs.promises.rm(tempDirectory, { recursive: true, force: true }).catch(() => {});
         }
     } else {
         const wav = new WaveFile();

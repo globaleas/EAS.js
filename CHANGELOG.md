@@ -19,7 +19,7 @@ All notable changes to EASjs are documented in this file.
 - `generateEASAlert` now requires a valid SAME header instead of accepting arbitrary message strings such as `ZCZC-TEST`.
 - `generateEASAlert` now rejects when audio or MP3 conversion fails instead of logging the error and resolving it.
 - `generateEASAlert` now rejects unsupported generator modes instead of using the default behavior.
-- EASjs now requires Node.js 14.14.0 or newer.
+- EASjs now requires Node.js 16 or newer.
 
 ### Fixed
 
