@@ -19,12 +19,14 @@ All notable changes to EASjs are documented in this file.
 - `generateEASAlert` now requires a valid SAME header instead of accepting arbitrary message strings such as `ZCZC-TEST`.
 - `generateEASAlert` now rejects when audio or MP3 conversion fails instead of logging the error and resolving it.
 - `generateEASAlert` now rejects unsupported generator modes instead of using the default behavior.
+- EASjs now requires Node.js 14.14.0 or newer.
 
 ### Fixed
 
 - Use unique OS temporary directories for audio conversion and MP3 export.
 - Normalize missing final header dashes before decoding and generation.
 - Accept shorter sender IDs and pad them to eight characters during generation.
+- Accept validity periods through 99 hours and 30 minutes, following NWS SAME guidelines.
 - Fixed some misspellings in the `EASData.json` file.
 - Limit the published package to runtime files and documentation.
 
