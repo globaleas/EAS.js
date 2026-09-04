@@ -10,6 +10,7 @@ const { WaveFile } = require('wavefile');
 const ffmpeg = require('ffmpeg-static');
 const { execFile } = require('child_process');
 const { promisify } = require('util');
+const decodeSame = require('../EASText/decodeSame');
 const messages = require('./locals/en_us.json');
 const execFileAsync = promisify(execFile);
 
@@ -206,7 +207,18 @@ async function generateEASAlert(zczcMessage, options = {}) {
         outputFile = 'output.wav'
     } = options;
 
+    decodeSame(zczcMessage);
+    const message = zczcMessage.endsWith('-') ? zczcMessage : `${zczcMessage}-`;
+    const messageParts = message.split('-');
+    messageParts[messageParts.length - 2] = messageParts[messageParts.length - 2].padEnd(8, ' ');
+    const normalizedMessage = messageParts.join('-');
+
+    if (rawMode !== undefined && rawMode !== null && typeof rawMode !== 'string') {
+        throw new Error(messages.invalidMode);
+    }
+
     const mode = (rawMode ?? MODES.DEFAULT).toUpperCase();
+    if (!Object.values(MODES).includes(mode)) throw new Error(messages.invalidMode);
 
     let audioBuffer = new Float32Array(0);
     if (audioPath?.trim()) {
@@ -235,7 +247,7 @@ async function generateEASAlert(zczcMessage, options = {}) {
 
     let output = concatAudio(
         createSilence(1000),
-        encodeHeader('\xAB'.repeat(16) + zczcMessage, mode),
+        encodeHeader('\xAB'.repeat(16) + normalizedMessage, mode),
         createSilence(mode === MODES.TRILITHIC ? 1118: 1000)
     );
 

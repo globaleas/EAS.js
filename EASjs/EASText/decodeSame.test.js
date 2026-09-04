@@ -49,6 +49,30 @@ describe('decodeSame', () => {
         expect(() => decodeSame(invalidHeader)). toThrow(messages.expiretimeinvalid);
     });
 
+    test('should throw an error if the expire time is not a valid increment', () => {
+        expect(() => decodeSame('ZCZC-WXR-SQW-027133+0115-3441441-ERN/CRTV-')).toThrow(messages.expiretimeinvalid);
+        expect(() => decodeSame('ZCZC-WXR-SQW-027133+9999-3441441-ERN/CRTV-')).toThrow(messages.expiretimeinvalid);
+    });
+
+    test('should throw an error if there are too many FIPS codes', () => {
+        const locations = Array(32).fill('027133').join('-');
+        expect(() => decodeSame(`ZCZC-WXR-SQW-${locations}+0100-3441441-ERN/CRTV-`)).toThrow(messages.fipsinvalid);
+    });
+
+    test('should throw an error if a FIPS code contains trailing characters', () => {
+        expect(() => decodeSame('ZCZC-WXR-SQW-027133ABC+0100-3441441-ERN/CRTV-')).toThrow(messages.fipsinvalid);
+    });
+
+    test('should throw an error if the sender is invalid', () => {
+        expect(() => decodeSame('ZCZC-WXR-SQW-027133+0100-3441441-')).toThrow(messages.senderinvalid);
+        expect(() => decodeSame('ZCZC-WXR-SQW-027133+0100-3441441-TOOLONGID-')).toThrow(messages.senderinvalid);
+    });
+
+    test('should decode a sender shorter than eight characters', () => {
+        const result = decodeSame('ZCZC-WXR-ADR-040059-040153-040151+0045-1142248-ERN/KLT-');
+        expect(result.sender).toBe('ERN/KLT');
+    });
+
     test('should decode a valid SAME header', () => {
         const validHeader = 'ZCZC-WXR-SQW-027133+0100-3441441-ERN/CRTV-';
         const result = decodeSame(validHeader);
@@ -63,6 +87,11 @@ describe('decodeSame', () => {
             sender: 'ERN/CRTV',
             formatted: expect.any(String),
         });
+    });
+
+    test('should decode a valid SAME header without a final dash', () => {
+        const result = decodeSame('ZCZC-WXR-SQW-027133+0100-3441441-ERN/CRTV');
+        expect(result.sender).toBe('ERN/CRTV');
     });
 
     test('should decode time in UTC', () => {

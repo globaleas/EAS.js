@@ -20,8 +20,8 @@ const decodeSame = (data, options = {}) => {
         throw new Error(messages.nodata);
     }
 
-    const cleanData = data.endsWith('-') ? data.slice(0, -1) : data;
-    const parts = cleanData.split('-');
+    const cleanData = data.endsWith('-') ? data : `${data}-`;
+    const parts = cleanData.slice(0, -1).split('-');
 
     validateHeader(parts);
 
@@ -54,7 +54,7 @@ const validateHeader = (parts) => {
  */
 const parseOrgCode = (orgCode) => {
     const org = EASData.ORGS?.[orgCode];
-    if (!org) throw new Error(messages.orgcodeinvalid);
+    if (!/^[A-Z]{3}$/.test(orgCode) || !org) throw new Error(messages.orgcodeinvalid);
     return org;
 };
 
@@ -66,7 +66,7 @@ const parseOrgCode = (orgCode) => {
  */
 const parseEventCode = (eventCode) => {
     const event = EASData.EVENTS?.[eventCode];
-    if (!event) throw new Error(messages.eventcodeinvalid);
+    if (!/^[A-Z]{3}$/.test(eventCode) || !event) throw new Error(messages.eventcodeinvalid);
     return event;
 };
 
@@ -84,7 +84,10 @@ const parseFipsAndTime = (parts, options) => {
 
     for (let i = 3; i < parts.length; i++) {
         if (parts[i].includes('+')) {
-            const [fipsCode, time] = parts[i].split('+');
+            const timeParts = parts[i].split('+');
+            if (timeParts.length !== 2) throw new Error(messages.expiretimeinvalid);
+
+            const [fipsCode, time] = timeParts;
             fipsCodes.push(fipsCode);
             timeOffset = time;
             senderIndex = i + 1;
@@ -94,6 +97,20 @@ const parseFipsAndTime = (parts, options) => {
     }
 
     if (!timeOffset) throw new Error(messages.expiretimeinvalid);
+    if (fipsCodes.length === 0 || fipsCodes.length > 31 ||
+        fipsCodes.some((code) => !/^\d{6}$/.test(code))) {
+        throw new Error(messages.fipsinvalid);
+    }
+
+    if (!/^\d{4}$/.test(timeOffset)) throw new Error(messages.expiretimeinvalid);
+    const expireHours = parseInt(timeOffset.slice(0, 2), 10);
+    const expireMinutes = parseInt(timeOffset.slice(2), 10);
+    const validDuration =
+        expireHours === 0 && [15, 30, 45].includes(expireMinutes) ||
+        expireHours >= 1 && expireHours < 6 && [0, 30].includes(expireMinutes) ||
+        expireHours === 6 && expireMinutes === 0;
+
+    if (!validDuration) throw new Error(messages.expiretimeinvalid);
 
     const timeString = parts[senderIndex] ?? '';
     if (!/^\d{7}$/.test(timeString)) throw new Error(messages.datetimeinvalid);
@@ -129,9 +146,6 @@ const parseFipsAndTime = (parts, options) => {
         Math.abs(a.getTime() - referenceDate.getTime()) - Math.abs(b.getTime() - referenceDate.getTime())
     )[0];
 
-    if (timeOffset.length !== 4) throw new Error(messages.expiretimeinvalid);
-    const expireHours = parseInt(timeOffset.slice(0, 2), 10);
-    const expireMinutes = parseInt(timeOffset.slice(2), 10);
     const endTime = new Date(startTime.getTime() + (expireHours * 60 + expireMinutes) * 60 * 1000);
 
     const locations = fipsCodes.map((code) => {
@@ -152,8 +166,9 @@ const parseFipsAndTime = (parts, options) => {
         return `${subdiv === "0" ? "" : subdivName}${sameLoc}`;
     });
 
-    const senderParts = parts.slice(senderIndex);
-    const sender = senderParts.join('-').split('-').slice(1).join('-');
+    const sender = parts[senderIndex + 1] ?? '';
+    if (!/^[A-Z0-9/ ]{1,8}$/.test(sender)) throw new Error(messages.senderinvalid);
+    if (parts.length !== senderIndex + 2) throw new Error(messages.invalidsameheader);
 
     return { locations, startTime, endTime, sender };
 };
