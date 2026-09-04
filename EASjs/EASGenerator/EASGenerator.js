@@ -275,13 +275,10 @@ async function generateEASAlert(zczcMessage, options = {}) {
         const tempDirectory = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'easjs-'));
         const tempWav = path.join(tempDirectory, 'export.wav');
         try {
-            console.log('Creating temporary WAV file for MP3 conversion...');
             const wav = new WaveFile();
             wav.fromScratch(1, SAMPLE_RATE, BIT_DEPTH, int16Buffer);
             fs.writeFileSync(tempWav, wav.toBuffer());
-            console.log('WAV file created successfully.');
 
-            console.log('Converting WAV to MP3...');
             await execFileAsync(ffmpeg, [
                 '-hide_banner', '-y',
                 '-i', tempWav,
