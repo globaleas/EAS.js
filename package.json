@@ -1,9 +1,19 @@
 {
   "name": "@globaleas/easjs",
-  "version": "0.2.4",
+  "version": "0.3.0",
   "description": "An open source EAS library created by the community, for the community",
   "main": "index.js",
   "type": "commonjs",
+  "files": [
+    "index.js",
+    "EASData.json",
+    "EASjs/**/*.js",
+    "!EASjs/**/*.test.js",
+    "EASjs/**/*.json",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
   "publishConfig": {
     "access": "public"
   },
