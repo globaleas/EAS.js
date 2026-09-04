@@ -12,6 +12,7 @@ const messages = require('./locals/en_us.json');
  * @param {Object} [options={}] - Options for decoding the header.
  * @param {Date|string|number} [options.referenceDate] - Date used to resolve the header year.
  * @param {number} [options.year] - Explicit year for the header.
+ * @param {string} [options.timeZone] - Timezone used to format the header time.
  * @returns {object} Decoded SAME header information.
  * @throws {Error} If the SAME header format is invalid.
  */
@@ -29,7 +30,7 @@ const decodeSame = (data, options = {}) => {
     const eventInfo = parseEventCode(parts[2]);
     const { locations, startTime, endTime, sender } = parseFipsAndTime(parts, options);
 
-    return formatResponse(orgInfo, eventInfo, locations, startTime, endTime, sender);
+    return formatResponse(orgInfo, eventInfo, locations, startTime, endTime, sender, options);
 };
 
 /**
@@ -181,15 +182,20 @@ const parseFipsAndTime = (parts, options) => {
  * @param {Date} startTime - The start time.
  * @param {Date} endTime - The end time.
  * @param {string} sender - The sender information.
+ * @param {Object} options - Options for formatting the header.
  * @returns {object} The formatted response.
  */
-const formatResponse = (org, event, locations, startTime, endTime, sender) => {
+const formatResponse = (org, event, locations, startTime, endTime, sender, options) => {
     const formatTime = (date) => {
-        const options = { hour: 'numeric', minute: 'numeric', hour12: true, timeZone: 'UTC' };
-        const time = date.toLocaleTimeString('en-US', options);
-        const month = date.toLocaleString('en-US', { month: 'long', timeZone: 'UTC' });
-        const day = date.getUTCDate();
-        return `${time} on ${month} ${day}`;
+        const timeOptions = { hour: 'numeric', minute: 'numeric', hour12: true };
+        const dateOptions = { month: 'long', day: 'numeric' };
+        if (options.timeZone) {
+            timeOptions.timeZone = options.timeZone;
+            dateOptions.timeZone = options.timeZone;
+        }
+        const time = date.toLocaleTimeString('en-US', timeOptions);
+        const formattedDate = date.toLocaleString('en-US', dateOptions);
+        return `${time} on ${formattedDate}`;
     };
 
     return {

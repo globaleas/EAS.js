@@ -99,7 +99,7 @@ describe('decodeSame', () => {
         const timezone = process.env.TZ;
         process.env.TZ = 'America/Denver';
         try {
-            const result = decodeSame(validHeader, { year: 2026 });
+            const result = decodeSame(validHeader, { year: 2026, timeZone: 'UTC' });
             expect(result.timing).toEqual({
                 start: '12:30 AM on January 1',
                 end: '1:30 AM on January 1',
@@ -109,9 +109,27 @@ describe('decodeSame', () => {
         }
     });
 
+    test('should decode time in the system timezone by default', () => {
+        const validHeader = 'ZCZC-WXR-SQW-027133+0100-0010030-ERN/CRTV-';
+        const timezone = process.env.TZ;
+        process.env.TZ = 'America/Denver';
+        try {
+            const result = decodeSame(validHeader, { year: 2026 });
+            expect(result.timing).toEqual({
+                start: '5:30 PM on December 31',
+                end: '6:30 PM on December 31',
+            });
+        } finally {
+            process.env.TZ = timezone;
+        }
+    });
+
     test('should resolve the year from a reference date', () => {
         const validHeader = 'ZCZC-WXR-SQW-027133+0100-0602330-ERN/CRTV-';
-        const result = decodeSame(validHeader, { referenceDate: '2024-02-29T23:30:00Z' });
+        const result = decodeSame(validHeader, {
+            referenceDate: '2024-02-29T23:30:00Z',
+            timeZone: 'UTC'
+        });
         expect(result.timing).toEqual({
             start: '11:30 PM on February 29',
             end: '12:30 AM on March 1',

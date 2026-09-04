@@ -54,6 +54,11 @@ console.log(result)
   formatted: 'The National Weather Service has issued a Tsunami Warning for San Mateo, CA; Contra Costa, CA; Alameda, CA; Santa Cruz, CA; Santa Clara, CA; beginning at 7:00 PM on December 6 and ending at 8:00 PM on December 6. Message from WJON/BLU'
 }
 ```
+SAME header times are calculated in UTC and displayed in the system timezone by default. To use a specific timezone:
+```javascript
+const result = decodeSame(header, { timeZone: 'UTC' })
+```
+
 To grab a specific value from the decoded data:
 ```javascript
 const { decodeSame } = require('@globaleas/easjs')
